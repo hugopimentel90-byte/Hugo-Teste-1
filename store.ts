@@ -5,8 +5,9 @@ import { AppState, Board, Card, List, User, Comment, Label, ChecklistItem } from
 import { v4 as uuidv4 } from 'uuid';
 
 // --- CONFIGURATION ---
+// Mantendo falso para garantir funcionamento imediato
 const API_URL = 'http://localhost:3000/api';
-const USE_API = true; // Set to false to use local-only mode if backend is offline
+const USE_API = false; 
 
 // Helper for API calls
 async function apiCall(endpoint: string, method: string = 'GET', body?: any) {
@@ -30,6 +31,21 @@ async function apiCall(endpoint: string, method: string = 'GET', body?: any) {
         throw e;
     }
 }
+
+// --- LOCAL AUTH SIMULATION (MOCK DB) ---
+const USERS_STORAGE_KEY = 'trellix-users-db';
+
+const getLocalUsers = (): any[] => {
+    try {
+        return JSON.parse(localStorage.getItem(USERS_STORAGE_KEY) || '[]');
+    } catch { return []; }
+};
+
+const saveLocalUser = (user: any) => {
+    const users = getLocalUsers();
+    users.push(user);
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+};
 
 interface Store extends AppState {
   isLoading: boolean;
@@ -88,22 +104,41 @@ export const useStore = create<Store>()(
       isLoading: false,
 
       login: async (email, password) => {
+          // Normalização para login (case insensitive para o usuário)
+          const normalizedLogin = email.trim();
+          
+          // HARDCODED CREDENTIALS REQUESTED BY USER
+          if (normalizedLogin === 'APCP' && password === 'marinha123') {
+              const adminUser = {
+                  id: 'user-admin-apcp',
+                  email: 'apcp@sistema.interno',
+                  name: 'Operador APCP',
+                  avatar: `https://ui-avatars.com/api/?name=APCP&background=0f172a&color=fff&bold=true`
+              };
+              set({ user: adminUser });
+              return;
+          }
+
           if (USE_API) {
               try {
                   const user = await apiCall('/login', 'POST', { email, password });
                   set({ user });
               } catch (e) {
-                  throw e; // Let component handle error
+                  throw e;
               }
           } else {
-              // Fallback for no-backend demo
-              const fallbackUser = { 
-                id: 'user-demo', 
-                email, 
-                name: 'Demo User', 
-                avatar: `https://ui-avatars.com/api/?name=Demo+User&background=0ea5e9&color=fff`
-              };
-              set({ user: fallbackUser });
+              // Local Auth Simulation for other users
+              const users = getLocalUsers();
+              const foundUser = users.find(u => u.email === email && u.password === password);
+              
+              if (foundUser) {
+                  const { password: _, ...safeUser } = foundUser;
+                  set({ user: safeUser });
+              } else {
+                  // Add a small delay to simulate processing
+                  await new Promise(resolve => setTimeout(resolve, 800));
+                  throw new Error('Credenciais inválidas. Verifique seu login e senha.');
+              }
           }
       },
 
@@ -116,23 +151,44 @@ export const useStore = create<Store>()(
                 throw e;
             }
         } else {
-            // Fallback
-            const fallbackUser = { 
-                id: uuidv4(), 
-                email, 
-                name, 
+            // Local Register Simulation
+            const users = getLocalUsers();
+            if (users.find(u => u.email === email)) {
+                throw new Error('Este usuário já está cadastrado.');
+            }
+
+            const newUser = {
+                id: uuidv4(),
+                email,
+                name,
+                password, 
                 avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=0ea5e9&color=fff`
-              };
-            set({ user: fallbackUser });
+            };
+            
+            saveLocalUser(newUser);
+            
+            const { password: _, ...safeUser } = newUser;
+            set({ user: safeUser });
         }
       },
 
-      logout: () => set({ user: null, currentBoardId: null, boards: [], lists: [], cards: [] }),
+      logout: () => set({ user: null, currentBoardId: null }),
 
       fetchBoards: async () => {
           const user = get().user;
-          if (!user || !USE_API) return;
+          // Se for user local sem ID real, não busca
+          if (!user) return;
+          
           set({ isLoading: true });
+          
+          // Se a API estiver desligada, usamos o estado local persistido (persist middleware do zustand já cuida disso)
+          // Apenas simulamos um loading para UX
+          if (!USE_API) {
+              await new Promise(resolve => setTimeout(resolve, 500));
+              set({ isLoading: false });
+              return;
+          }
+
           try {
               const boards = await apiCall(`/boards?userId=${user.id}`);
               set({ boards });
@@ -144,8 +200,12 @@ export const useStore = create<Store>()(
       },
 
       fetchBoardData: async (boardId) => {
-          if (!USE_API) return;
           set({ isLoading: true });
+           if (!USE_API) {
+              await new Promise(resolve => setTimeout(resolve, 300));
+              set({ isLoading: false });
+              return;
+          }
           try {
               const lists = await apiCall(`/lists?boardId=${boardId}`);
               const listIds = lists.map((l: List) => l.id).join(',');
@@ -321,16 +381,7 @@ export const useStore = create<Store>()(
             if (cardIndex === -1) return state;
             
             const card = { ...newCards[cardIndex] };
-            
-            // Remove from old position
-            // In a real complex app we might handle sorting array logic more robustly
-            // Here we rely on backend for persistent order and frontend DndKit for visual
-            
             card.listId = destListId;
-            
-            // We actually don't strictly need to reorder the array perfectly here for 
-            // basic visual continuity if we re-fetch or if dnd-kit handles the DOM,
-            // but updating the listId is crucial for filtering.
             newCards[cardIndex] = card;
             
             return { cards: newCards }; 

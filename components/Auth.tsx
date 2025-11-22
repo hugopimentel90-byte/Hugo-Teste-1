@@ -3,17 +3,13 @@ import React, { useState } from 'react';
 import { useStore } from '../store';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
-import { Layout, AlertCircle, ArrowRight, UserPlus, LogIn } from 'lucide-react';
+import { ShieldCheck, Lock, ArrowRight, AlertCircle, User as UserIcon } from 'lucide-react';
 
 export const Auth: React.FC = () => {
   const login = useStore((state) => state.login);
-  const register = useStore((state) => state.register);
-  
-  const [isRegistering, setIsRegistering] = useState(false);
   
   // Form State
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(''); // Usado como Identificação (User)
   const [password, setPassword] = useState('');
   
   const [error, setError] = useState('');
@@ -25,142 +21,123 @@ export const Auth: React.FC = () => {
     setLoading(true);
 
     try {
-        if (isRegistering) {
-            await register(name, email, password);
-        } else {
-            await login(email, password);
-        }
+        await login(email, password);
     } catch (err: any) {
-        setError(err.message || 'Erro de autenticação.');
-    } finally {
+        setError(err.message || 'Acesso negado. Verifique suas credenciais.');
         setLoading(false);
     }
   };
 
-  const toggleMode = () => {
-      setIsRegistering(!isRegistering);
-      setError('');
-      setName('');
-      setEmail('');
-      setPassword('');
-  }
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4 transition-colors relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-slate-100 dark:bg-slate-950 p-4 font-sans relative overflow-hidden">
       
-      {/* Background Elements */}
-      <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-primary-600/10 to-transparent dark:from-primary-900/20 pointer-events-none" />
-      <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute top-1/2 -left-24 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+      {/* Abstract Tech Background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-100 via-slate-100 to-slate-100 dark:from-slate-900 dark:via-slate-950 dark:to-slate-950 opacity-70" />
+        <div className="absolute -top-[10%] -right-[10%] w-[50vw] h-[50vw] rounded-full bg-blue-500/5 blur-3xl" />
+        <div className="absolute top-[20%] -left-[10%] w-[30vw] h-[30vw] rounded-full bg-cyan-500/5 blur-3xl" />
+      </div>
 
-      <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 relative z-10 overflow-hidden">
+      <div className="w-full max-w-md relative z-10">
         
-        {/* Header Banner */}
-        <div className="bg-slate-50 dark:bg-slate-900/50 p-8 text-center border-b border-slate-100 dark:border-slate-800">
-           <div className="inline-flex items-center justify-center p-3 bg-primary-600 rounded-xl shadow-lg shadow-primary-600/20 text-white mb-4 transform transition-transform hover:scale-110">
-             <Layout size={32} strokeWidth={2} />
-           </div>
-           <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight mb-2">Trellix</h1>
-           <p className="text-slate-500 dark:text-slate-400 text-sm">
-             {isRegistering ? 'Crie sua conta para começar' : 'Gerencie seus projetos com agilidade'}
-           </p>
-        </div>
+        {/* Card Container */}
+        <div className="bg-white dark:bg-slate-900/80 backdrop-blur-lg rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+          
+          {/* Header Branding */}
+          <div className="pt-10 pb-6 px-8 text-center">
+             <div className="inline-flex items-center justify-center p-4 bg-slate-900 dark:bg-slate-800 rounded-2xl mb-6 shadow-lg">
+                <ShieldCheck size={40} className="text-white dark:text-blue-400" strokeWidth={1.5} />
+             </div>
+             <h1 className="text-2xl font-bold text-blue-600 dark:text-blue-400 tracking-tight">
+                Trellix
+             </h1>
+             <p className="text-slate-500 dark:text-slate-400 text-sm mt-2 font-medium uppercase tracking-wider">
+                Sistema Integrado
+             </p>
+          </div>
 
-        <div className="p-8">
-            {/* Error Alert */}
+          <div className="px-8 pb-10">
+            
+            {/* Error Notification */}
             {error && (
-                <div className="mb-6 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm p-4 rounded-lg flex items-start gap-3 animate-in slide-in-from-top-2 border border-red-100 dark:border-red-900/30">
-                <AlertCircle size={18} className="mt-0.5 shrink-0" />
-                <span>{error}</span>
+                <div className="mb-6 flex items-center gap-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 text-red-600 dark:text-red-400 text-sm p-3 rounded-lg animate-in fade-in slide-in-from-top-2">
+                    <AlertCircle size={18} className="shrink-0" />
+                    <span className="font-medium">{error}</span>
                 </div>
             )}
 
-            {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-5">
-            
-            <div className={`space-y-4 transition-all duration-300 ${isRegistering ? 'translate-x-0' : ''}`}>
-                {isRegistering && (
-                    <div className="animate-in fade-in slide-in-from-left-4 duration-300">
+                
+                <div className="space-y-4">
+                    <div className="relative">
+                        <div className="absolute top-9 left-3 text-slate-400 z-10">
+                            <UserIcon size={18} />
+                        </div>
                         <Input
-                            label="Nome Completo"
+                            label="Identificação"
                             type="text"
-                            placeholder="Ex: João Silva"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            required={isRegistering}
+                            placeholder="ID do Usuário (Ex: APCP)"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            className="pl-10 font-medium tracking-wide"
+                            required
+                            autoComplete="off"
+                            autoFocus
                         />
                     </div>
-                )}
-                
-                <Input
-                    label="E-mail"
-                    type="email"
-                    placeholder="seu@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                />
-                
-                <Input
-                    label="Senha"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                />
-            </div>
-
-            <div className="pt-4">
-                <Button 
-                    type="submit" 
-                    fullWidth 
-                    disabled={loading}
-                    size="lg"
-                    className="h-12 font-semibold text-base shadow-lg shadow-primary-600/20 group"
-                >
-                {loading ? (
-                    <div className="flex items-center gap-2">
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        <span>Processando...</span>
+                    
+                    <div className="relative">
+                        <div className="absolute top-9 left-3 text-slate-400 z-10">
+                            <Lock size={18} />
+                        </div>
+                        <Input
+                            label="Senha de Acesso"
+                            type="password"
+                            placeholder="••••••••"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="pl-10"
+                            required
+                        />
                     </div>
-                ) : (
-                    <div className="flex items-center justify-center gap-2">
-                        {isRegistering ? 'Criar Conta' : 'Entrar no Sistema'}
-                        <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-                    </div>
-                )}
-                </Button>
-            </div>
-            </form>
+                </div>
 
-            {/* Toggle Mode */}
-            <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 text-center">
-                <p className="text-slate-500 dark:text-slate-400 text-sm mb-3">
-                    {isRegistering ? 'Já tem uma conta?' : 'Novo no Trellix?'}
-                </p>
-                <button 
-                    onClick={toggleMode}
-                    className="inline-flex items-center gap-2 text-sm font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-500 dark:hover:text-primary-400 transition-colors px-4 py-2 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/20"
-                >
-                    {isRegistering ? (
-                        <>
-                            <LogIn size={16} /> Voltar para Login
-                        </>
+                <div className="pt-2">
+                    <Button 
+                        type="submit" 
+                        fullWidth 
+                        disabled={loading}
+                        size="lg"
+                        className="bg-slate-900 hover:bg-slate-800 dark:bg-blue-600 dark:hover:bg-blue-500 text-white transition-all h-12 font-semibold shadow-md hover:shadow-lg hover:-translate-y-0.5"
+                    >
+                    {loading ? (
+                        <div className="flex items-center justify-center gap-2">
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            <span className="tracking-wide text-sm">Autenticando...</span>
+                        </div>
                     ) : (
-                        <>
-                            <UserPlus size={16} /> Criar Nova Conta
-                        </>
+                        <div className="flex items-center justify-center gap-2">
+                            <span>Acessar Sistema</span>
+                            <ArrowRight size={18} />
+                        </div>
                     )}
-                </button>
-            </div>
+                    </Button>
+                </div>
+            </form>
+          </div>
+          
+          {/* Footer / Decorative */}
+          <div className="bg-slate-50 dark:bg-slate-800/50 py-3 px-8 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center text-[10px] text-slate-400 uppercase tracking-widest font-semibold">
+              <span>Secure Connection</span>
+              <span>v2.4.0</span>
+          </div>
         </div>
-      </div>
-      
-      <div className="absolute bottom-4 text-center w-full">
-        <p className="text-xs text-slate-400 dark:text-slate-600 font-medium">
-           &copy; {new Date().getFullYear()} Trellix System
-        </p>
+        
+        <div className="mt-6 text-center">
+             <p className="text-slate-400 dark:text-slate-600 text-xs font-medium">
+                 Acesso restrito a pessoal autorizado.
+             </p>
+        </div>
       </div>
     </div>
   );
