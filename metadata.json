@@ -1,0 +1,5 @@
+{
+  "name": "Trellix - Sitrep PS",
+  "description": "A modern, responsive Kanban board application inspired by Trello. Features drag-and-drop task management, authentication, and board organization.",
+  "requestFramePermissions": []
+}
